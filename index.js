@@ -17,6 +17,11 @@ let dependencies = {};
 program
   .version(version, '-v, --version', 'output the version number')
   .option('-d, --debug')
+  .option(
+    '-p, --package-json [package.json]',
+    'will use that package.json as default dependencies for the sample app',
+    false
+  )
   .arguments('[packages...]')
   .action(packages => {
     if (packages) {
@@ -31,15 +36,20 @@ if (packagesToAdd && packagesToAdd.length === 0) {
 }
 
 (async () => {
-  let reactNativeVersion = null;
+  let reactNativeVersion = 'latest';
 
-  await action(
-    'Reading package.json of your working directory',
-    new Promise((resolve, reject) => {
-      fs.readFile(
-        path.resolve(process.cwd(), 'package.json'),
-        'UTF-8',
-        (error, data) => {
+  if (program.packageJson !== false) {
+    const pathToPackageJson =
+      program.packageJson === true
+        ? path.resolve(process.cwd(), 'package.json')
+        : program.packageJson;
+
+    await action(
+      `Reading package.json ${
+        program.debug ? chalk.green(pathToPackageJson) : ''
+      }`,
+      new Promise((resolve, reject) => {
+        fs.readFile(pathToPackageJson, 'UTF-8', (error, data) => {
           if (error) {
             reject(error);
           }
@@ -54,10 +64,10 @@ if (packagesToAdd && packagesToAdd.length === 0) {
           }
 
           resolve(`Found react-native@${reactNativeVersion}`);
-        }
-      );
-    })
-  );
+        });
+      })
+    );
+  }
 
   let tempDirectory = null;
   let clearTempDirectory = null;
@@ -81,51 +91,55 @@ if (packagesToAdd && packagesToAdd.length === 0) {
   await action(
     `Creating a sample app with react-native@${reactNativeVersion}`,
     execa(
-      `echo "y" | npx react-native-cli init BundleSize --directory ${tempDirectory} --version ${reactNativeVersion}`,
+      `echo "y" | npx react-native-cli init BundleSize --directory ${tempDirectory} ${
+        reactNativeVersion !== 'latest' ? `--version ${reactNativeVersion}` : ''
+      }`,
       {
         shell: true,
       }
     )
   );
 
-  const dependenciesWithoutReact = Object.entries(dependencies).filter(
-    ([key]) => key !== 'react-native' && key !== 'react'
-  );
+  if (program.packageJson !== false) {
+    const dependenciesWithoutReact = Object.entries(dependencies).filter(
+      ([key]) => key !== 'react-native' && key !== 'react'
+    );
 
-  await action(
-    `Adding ${dependenciesWithoutReact.length} dependencies from your package.json to the sample app`,
-    execa(
-      `yarn add ${dependenciesWithoutReact
-        .map(([key, value]) => `${key}@"${value}"`)
-        .join(' ')}`,
-      {
-        cwd: tempDirectory,
-        shell: true,
-      }
-    )
-  );
-
-  await action(
-    `Importing ${dependenciesWithoutReact.length} dependencies from your packages.json to the sample app`,
-    new Promise((resolve, reject) =>
-      prependFile(
-        `${tempDirectory}/index.js`,
-        `${dependenciesWithoutReact.map(
-          ([packageName], index) =>
-            `import * as OriginalPackage${index} from '${packageName}';`
-        ).join(`
-`)}
-`,
-        err => {
-          if (err) {
-            reject(err);
-          }
-
-          resolve();
+    await action(
+      `Adding ${dependenciesWithoutReact.length} dependencies from your package.json to the sample app`,
+      execa(
+        `yarn add ${dependenciesWithoutReact
+          .map(([key, value]) => `${key}@"${value}"`)
+          .join(' ')}`,
+        {
+          cwd: tempDirectory,
+          shell: true,
         }
       )
-    )
-  );
+    );
+
+    await action(
+      `Importing ${dependenciesWithoutReact.length} dependencies from your packages.json to the sample app`,
+      new Promise((resolve, reject) =>
+        prependFile(
+          `${tempDirectory}/index.js`,
+          `${dependenciesWithoutReact.map(
+            ([packageName], index) =>
+              `import * as OriginalPackage${index} from '${packageName}';`
+          ).join(`
+`)}
+`,
+          err => {
+            if (err) {
+              reject(err);
+            }
+
+            resolve();
+          }
+        )
+      )
+    );
+  }
 
   await action(
     'Bundling sample app',
@@ -166,7 +180,7 @@ if (packagesToAdd && packagesToAdd.length === 0) {
           (packageName, index) =>
             `import * as Package${index} from '${packageName}';`
         ).join(`
-  `)}
+`)}
 `,
         err => {
           if (err) {
