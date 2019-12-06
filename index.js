@@ -37,6 +37,10 @@ if (packagesToAdd && packagesToAdd.length === 0) {
 
 (async () => {
   let reactNativeVersion = 'latest';
+  let dependenciesWithoutReact = [];
+  let existingDependenciesNames = [];
+  let tempDirectory = null;
+  let clearTempDirectory = null;
 
   if (program.packageJson !== false) {
     const pathToPackageJson =
@@ -55,6 +59,12 @@ if (packagesToAdd && packagesToAdd.length === 0) {
           }
 
           dependencies = JSON.parse(data).dependencies;
+          dependenciesWithoutReact = Object.entries(dependencies).filter(
+            ([key]) => key !== 'react-native' && key !== 'react'
+          );
+          existingDependenciesNames = Object.values(
+            dependenciesWithoutReact
+          ).map(([packageName]) => packageName);
 
           reactNativeVersion = dependencies['react-native'];
 
@@ -68,9 +78,6 @@ if (packagesToAdd && packagesToAdd.length === 0) {
       })
     );
   }
-
-  let tempDirectory = null;
-  let clearTempDirectory = null;
 
   await action(
     'Creating a temporary directory',
@@ -101,10 +108,6 @@ if (packagesToAdd && packagesToAdd.length === 0) {
   );
 
   if (program.packageJson !== false) {
-    const dependenciesWithoutReact = Object.entries(dependencies).filter(
-      ([key]) => key !== 'react-native' && key !== 'react'
-    );
-
     await action(
       `Adding ${dependenciesWithoutReact.length} dependencies from your package.json to the sample app`,
       execa(
@@ -176,10 +179,14 @@ if (packagesToAdd && packagesToAdd.length === 0) {
     new Promise((resolve, reject) =>
       prependFile(
         `${tempDirectory}/index.js`,
-        `${packagesToAdd.map(
-          (packageName, index) =>
-            `import * as Package${index} from '${packageName}';`
-        ).join(`
+        `${packagesToAdd
+          .filter(
+            packageName => !existingDependenciesNames.includes(packageName)
+          )
+          .map(
+            (packageName, index) =>
+              `import * as Package${index} from '${packageName}';`
+          ).join(`
 `)}
 `,
         err => {
