@@ -167,7 +167,7 @@ if (packagesToAdd && packagesToAdd.length === 0) {
             `import * as Package${index} from '${packageName}';`
         ).join(`
   `)}
-  `,
+`,
         err => {
           if (err) {
             reject(err);
