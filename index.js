@@ -23,7 +23,7 @@ program
     false
   )
   .arguments('[packages...]')
-  .action(packages => {
+  .action((packages) => {
     if (packages) {
       packagesToAdd = packages;
     }
@@ -132,7 +132,7 @@ if (packagesToAdd && packagesToAdd.length === 0) {
           ).join(`
 `)}
 `,
-          err => {
+          (err) => {
             if (err) {
               reject(err);
             }
@@ -181,7 +181,7 @@ if (packagesToAdd && packagesToAdd.length === 0) {
         `${tempDirectory}/index.js`,
         `${packagesToAdd
           .filter(
-            packageName => !existingDependenciesNames.includes(packageName)
+            (packageName) => !existingDependenciesNames.includes(packageName)
           )
           .map(
             (packageName, index) =>
@@ -189,7 +189,7 @@ if (packagesToAdd && packagesToAdd.length === 0) {
           ).join(`
 `)}
 `,
-        err => {
+        (err) => {
           if (err) {
             reject(err);
           }
@@ -226,7 +226,7 @@ if (packagesToAdd && packagesToAdd.length === 0) {
     'Comparing size of bundles',
     new Promise((resolve, reject) => {
       Promise.all([
-        new Promise(statsResolve =>
+        new Promise((statsResolve) =>
           fs.stat(`${tempDirectory}/original.jsbundle`, [], (err, stats) => {
             if (err) {
               reject(err);
@@ -235,7 +235,7 @@ if (packagesToAdd && packagesToAdd.length === 0) {
             statsResolve(stats.size);
           })
         ),
-        new Promise(statsResolve =>
+        new Promise((statsResolve) =>
           fs.stat(
             `${tempDirectory}/withPackages.jsbundle`,
             [],
@@ -265,7 +265,7 @@ if (packagesToAdd && packagesToAdd.length === 0) {
 
   await action(
     'Generating sources map explorer',
-    new Promise(resolve => {
+    new Promise((resolve) => {
       const { name: sourceMapOutputDirectory } = tmp.dirSync();
 
       Promise.all([
