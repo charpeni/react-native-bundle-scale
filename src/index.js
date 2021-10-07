@@ -9,7 +9,7 @@ const tmp = require('tmp');
 
 const { action, generateSourceMapExplorer } = require('./utils');
 
-const { version } = require('./package.json');
+const { version } = require('../package.json');
 
 let packagesToAdd = [];
 let dependencies = {};
