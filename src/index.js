@@ -69,8 +69,7 @@ if (packagesToAdd && packagesToAdd.length === 0) {
           reactNativeVersion = dependencies['react-native'];
 
           if (reactNativeVersion == null) {
-            console.log('This is not a React Native project.');
-            reject();
+            reject(new Error('This is not a React Native project.'));
           }
 
           resolve(`Found react-native@${reactNativeVersion}`);
