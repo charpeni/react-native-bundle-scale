@@ -269,19 +269,15 @@ if (packagesToAdd && packagesToAdd.length === 0) {
       const { name: sourceMapOutputDirectory } = tmp.dirSync();
 
       Promise.all([
-        Promise.resolve(
-          generateSourceMapExplorer(
-            'original',
-            tempDirectory,
-            sourceMapOutputDirectory
-          )
+        generateSourceMapExplorer(
+          'original',
+          tempDirectory,
+          sourceMapOutputDirectory
         ),
-        Promise.resolve(
-          generateSourceMapExplorer(
-            'withPackages',
-            tempDirectory,
-            sourceMapOutputDirectory
-          )
+        generateSourceMapExplorer(
+          'withPackages',
+          tempDirectory,
+          sourceMapOutputDirectory
         ),
       ]).then(([originalOutput, withPackagesOutput]) => {
         resolve();

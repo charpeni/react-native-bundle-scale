@@ -41,7 +41,7 @@ async function generateSourceMapExplorer(
   const output = `${outputDirectory}/${filename}.html`;
 
   await execa(
-    `npx source-map-explorer ${sourceDirectory}/${filename}.jsbundle --html > ${output}`,
+    `npx source-map-explorer ${sourceDirectory}/${filename}.jsbundle --html ${output}`,
     { shell: true }
   );
 
