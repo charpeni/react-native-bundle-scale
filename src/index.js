@@ -87,7 +87,7 @@ if (packagesToAdd && packagesToAdd.length === 0) {
           reject(error);
         }
 
-        tempDirectory = directoryPath;
+        tempDirectory = `${directoryPath}/BundleSize`;
         clearTempDirectory = removeCallback;
 
         resolve(program.debug === true ? chalk.blue(tempDirectory) : undefined);
@@ -98,7 +98,7 @@ if (packagesToAdd && packagesToAdd.length === 0) {
   await action(
     `Creating a sample app with react-native@${reactNativeVersion}`,
     execa(
-      `echo "y" | npx react-native-cli init BundleSize --directory ${tempDirectory} ${
+      `npx --yes react-native@${reactNativeVersion} init BundleSize --directory ${tempDirectory} ${
         reactNativeVersion !== 'latest' ? `--version ${reactNativeVersion}` : ''
       }`,
       {
@@ -149,7 +149,7 @@ if (packagesToAdd && packagesToAdd.length === 0) {
     execa(
       'npx',
       [
-        'react-native-cli',
+        'react-native',
         'bundle',
         '--entry-file',
         'index.js',
@@ -205,7 +205,7 @@ if (packagesToAdd && packagesToAdd.length === 0) {
     execa(
       'npx',
       [
-        'react-native-cli',
+        'react-native',
         'bundle',
         '--entry-file',
         'index.js',
