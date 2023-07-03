@@ -11,6 +11,10 @@ const { action, generateSourceMapExplorer } = require('./utils');
 
 const { version } = require('../package.json');
 
+const PROJECT_NAME = 'BundleSize';
+const ORIGINAL_BUNDLE_NAME = 'original';
+const WITH_PACKAGES_BUNDLE_NAME = 'withPackages';
+
 let packagesToAdd = [];
 let dependencies = {};
 
@@ -86,7 +90,7 @@ if (packagesToAdd && packagesToAdd.length === 0) {
           reject(error);
         }
 
-        tempDirectory = `${directoryPath}/BundleSize`;
+        tempDirectory = `${directoryPath}/${PROJECT_NAME}`;
         clearTempDirectory = removeCallback;
 
         resolve(options.debug === true ? chalk.blue(tempDirectory) : undefined);
@@ -98,7 +102,7 @@ if (packagesToAdd && packagesToAdd.length === 0) {
     `Creating a sample app with react-native@${reactNativeVersion}`,
     () => {
       return execa(
-        `npx --yes react-native@${reactNativeVersion} init BundleSize --directory ${tempDirectory} ${
+        `npx --yes react-native@${reactNativeVersion} init ${PROJECT_NAME} --directory ${tempDirectory} ${
           reactNativeVersion !== 'latest'
             ? `--version ${reactNativeVersion}`
             : ''
@@ -155,9 +159,9 @@ if (packagesToAdd && packagesToAdd.length === 0) {
         '--dev',
         'false',
         '--bundle-output',
-        'original.jsbundle',
+        `${ORIGINAL_BUNDLE_NAME}.jsbundle`,
         '--sourcemap-output',
-        'original.map',
+        `${ORIGINAL_BUNDLE_NAME}.map`,
       ],
       { cwd: tempDirectory }
     );
@@ -199,9 +203,9 @@ if (packagesToAdd && packagesToAdd.length === 0) {
         '--dev',
         'false',
         '--bundle-output',
-        'withPackages.jsbundle',
+        `${WITH_PACKAGES_BUNDLE_NAME}.jsbundle`,
         '--sourcemap-output',
-        'withPackages.map',
+        `${WITH_PACKAGES_BUNDLE_NAME}.map`,
       ],
       { cwd: tempDirectory }
     );
@@ -209,8 +213,8 @@ if (packagesToAdd && packagesToAdd.length === 0) {
 
   await action('Comparing size of bundles', async () => {
     const [{ size: originalSize }, { size: polyfillSize }] = await Promise.all([
-      fs.stat(`${tempDirectory}/original.jsbundle`),
-      fs.stat(`${tempDirectory}/withPackages.jsbundle`),
+      fs.stat(`${tempDirectory}/${ORIGINAL_BUNDLE_NAME}.jsbundle`),
+      fs.stat(`${tempDirectory}/${WITH_PACKAGES_BUNDLE_NAME}.jsbundle`),
     ]);
 
     return chalk.white(`
@@ -230,12 +234,12 @@ if (packagesToAdd && packagesToAdd.length === 0) {
 
     const [originalOutput, withPackagesOutput] = await Promise.all([
       generateSourceMapExplorer(
-        'original',
+        ORIGINAL_BUNDLE_NAME,
         tempDirectory,
         sourceMapOutputDirectory
       ),
       generateSourceMapExplorer(
-        'withPackages',
+        WITH_PACKAGES_BUNDLE_NAME,
         tempDirectory,
         sourceMapOutputDirectory
       ),
