@@ -4,18 +4,22 @@ const { filesize } = require('filesize');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const prependFile = require('prepend-file');
-const program = require('commander');
+const { program } = require('commander');
 const tmp = require('tmp');
 
-const { action, generateSourceMapExplorer } = require('./utils');
+const { action, generateSourceMapExplorer, notNull } = require('./utils');
 
 const { version } = require('../package.json');
+
+tmp.setGracefulCleanup();
 
 const PROJECT_NAME = 'BundleSize';
 const ORIGINAL_BUNDLE_NAME = 'original';
 const WITH_PACKAGES_BUNDLE_NAME = 'withPackages';
 
+/** @type {Array<string>} */
 let packagesToAdd = [];
+/** @type {Record<string, string>} */
 let dependencies = {};
 
 program
@@ -27,7 +31,7 @@ program
     false
   )
   .arguments('[packages...]')
-  .action((packages) => {
+  .action((/** @type {Array<string>} */ packages) => {
     if (packages) {
       packagesToAdd = packages;
     }
@@ -44,10 +48,12 @@ if (packagesToAdd && packagesToAdd.length === 0) {
 
 (async () => {
   let reactNativeVersion = 'latest';
+  /** @type {Array<[string, string]>} */
   let dependenciesWithoutReact = [];
+  /** @type {Array<string>} */
   let existingDependenciesNames = [];
-  let tempDirectory = null;
-  let clearTempDirectory = null;
+  /** @type {string | undefined} */
+  let tempDirectory;
 
   if (options.packageJson !== false) {
     const pathToPackageJson =
@@ -85,13 +91,12 @@ if (packagesToAdd && packagesToAdd.length === 0) {
 
   await action('Creating a temporary directory', async () => {
     return new Promise((resolve, reject) => {
-      tmp.dir((error, directoryPath, removeCallback) => {
+      tmp.dir((error, directoryPath) => {
         if (error) {
           reject(error);
         }
 
         tempDirectory = `${directoryPath}/${PROJECT_NAME}`;
-        clearTempDirectory = removeCallback;
 
         resolve(options.debug === true ? chalk.blue(tempDirectory) : undefined);
       });
@@ -146,7 +151,7 @@ if (packagesToAdd && packagesToAdd.length === 0) {
     );
   }
 
-  await action('Bundling sample app', () => {
+  await action('Bundling sample app', async () => {
     return execa(
       'npx',
       [
@@ -230,17 +235,17 @@ if (packagesToAdd && packagesToAdd.length === 0) {
   });
 
   await action('Generating sources map explorer', async () => {
-    const { name: sourceMapOutputDirectory } = tmp.dirSync();
+    const { name: sourceMapOutputDirectory } = tmp.dirSync({ keep: true });
 
     const [originalOutput, withPackagesOutput] = await Promise.all([
       generateSourceMapExplorer(
         ORIGINAL_BUNDLE_NAME,
-        tempDirectory,
+        notNull(tempDirectory),
         sourceMapOutputDirectory
       ),
       generateSourceMapExplorer(
         WITH_PACKAGES_BUNDLE_NAME,
-        tempDirectory,
+        notNull(tempDirectory),
         sourceMapOutputDirectory
       ),
     ]);
@@ -250,8 +255,4 @@ Original source map explorer: ${chalk.underline(originalOutput)}
 With ${packagesToAdd.join(' ')}: ${chalk.underline(withPackagesOutput)} 
 `);
   });
-
-  if (!options.debug) {
-    clearTempDirectory();
-  }
 })();
