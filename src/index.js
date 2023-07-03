@@ -24,11 +24,14 @@ let packagesToAdd = [];
 let dependencies = {};
 
 program
-  .version(version, '-v, --version', 'output the version number')
+  .description(
+    'A command-line interface to see how adding packages affects your React Native JavaScript bundle.'
+  )
+  .version(version, '-v, --version', 'Show version number')
   .option('-d, --debug')
   .option(
     '-p, --package-json [package.json]',
-    'will use that package.json as default dependencies for the sample app',
+    'Use the package.json from the current working directory (or provided path) as default dependencies for the sample app',
     false
   )
   .arguments('[packages...]')
