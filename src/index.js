@@ -1,8 +1,8 @@
 const chalk = require('chalk');
 const execa = require('execa');
-const filesize = require('filesize');
-const fs = require('fs');
-const path = require('path');
+const { filesize } = require('filesize');
+const fs = require('node:fs/promises');
+const path = require('node:path');
 const prependFile = require('prepend-file');
 const program = require('commander');
 const tmp = require('tmp');
@@ -27,8 +27,11 @@ program
     if (packages) {
       packagesToAdd = packages;
     }
-  })
-  .parse(process.argv);
+  });
+
+program.parse(process.argv);
+
+const options = program.opts();
 
 if (packagesToAdd && packagesToAdd.length === 0) {
   console.error('You must provide at least one package to add.');
@@ -42,45 +45,42 @@ if (packagesToAdd && packagesToAdd.length === 0) {
   let tempDirectory = null;
   let clearTempDirectory = null;
 
-  if (program.packageJson !== false) {
+  if (options.packageJson !== false) {
     const pathToPackageJson =
-      program.packageJson === true
+      options.packageJson === true
         ? path.resolve(process.cwd(), 'package.json')
-        : program.packageJson;
+        : options.packageJson;
 
     await action(
       `Reading package.json ${
-        program.debug ? chalk.green(pathToPackageJson) : ''
+        options.debug ? chalk.blue(pathToPackageJson) : ''
       }`,
-      new Promise((resolve, reject) => {
-        fs.readFile(pathToPackageJson, 'UTF-8', (error, data) => {
-          if (error) {
-            reject(error);
-          }
-
-          dependencies = JSON.parse(data).dependencies;
-          dependenciesWithoutReact = Object.entries(dependencies).filter(
-            ([key]) => key !== 'react-native' && key !== 'react'
-          );
-          existingDependenciesNames = Object.values(
-            dependenciesWithoutReact
-          ).map(([packageName]) => packageName);
-
-          reactNativeVersion = dependencies['react-native'];
-
-          if (reactNativeVersion == null) {
-            reject(new Error('This is not a React Native project.'));
-          }
-
-          resolve(`Found react-native@${reactNativeVersion}`);
+      async () => {
+        const contents = await fs.readFile(pathToPackageJson, {
+          encoding: 'utf8',
         });
-      })
+
+        dependencies = JSON.parse(contents).dependencies;
+        dependenciesWithoutReact = Object.entries(dependencies).filter(
+          ([key]) => key !== 'react-native' && key !== 'react'
+        );
+        existingDependenciesNames = Object.values(dependenciesWithoutReact).map(
+          ([packageName]) => packageName
+        );
+
+        reactNativeVersion = dependencies['react-native'];
+
+        if (reactNativeVersion == null) {
+          throw new Error('This is not a React Native project.');
+        }
+
+        return `Found react-native@${reactNativeVersion}`;
+      }
     );
   }
 
-  await action(
-    'Creating a temporary directory',
-    new Promise((resolve, reject) => {
+  await action('Creating a temporary directory', async () => {
+    return new Promise((resolve, reject) => {
       tmp.dir((error, directoryPath, removeCallback) => {
         if (error) {
           reject(error);
@@ -89,63 +89,61 @@ if (packagesToAdd && packagesToAdd.length === 0) {
         tempDirectory = `${directoryPath}/BundleSize`;
         clearTempDirectory = removeCallback;
 
-        resolve(program.debug === true ? chalk.blue(tempDirectory) : undefined);
+        resolve(options.debug === true ? chalk.blue(tempDirectory) : undefined);
       });
-    })
-  );
+    });
+  });
 
   await action(
     `Creating a sample app with react-native@${reactNativeVersion}`,
-    execa(
-      `npx --yes react-native@${reactNativeVersion} init BundleSize --directory ${tempDirectory} ${
-        reactNativeVersion !== 'latest' ? `--version ${reactNativeVersion}` : ''
-      }`,
-      {
-        shell: true,
-      }
-    )
-  );
-
-  if (program.packageJson !== false) {
-    await action(
-      `Adding ${dependenciesWithoutReact.length} dependencies from your package.json to the sample app`,
-      execa(
-        `yarn add ${dependenciesWithoutReact
-          .map(([key, value]) => `${key}@"${value}"`)
-          .join(' ')}`,
+    () => {
+      return execa(
+        `npx --yes react-native@${reactNativeVersion} init BundleSize --directory ${tempDirectory} ${
+          reactNativeVersion !== 'latest'
+            ? `--version ${reactNativeVersion}`
+            : ''
+        }`,
         {
-          cwd: tempDirectory,
           shell: true,
         }
-      )
+      );
+    }
+  );
+
+  if (options.packageJson !== false) {
+    await action(
+      `Adding ${dependenciesWithoutReact.length} dependencies from your package.json to the sample app`,
+      () => {
+        return execa(
+          `yarn add ${dependenciesWithoutReact
+            .map(([key, value]) => `${key}@"${value}"`)
+            .join(' ')}`,
+          {
+            cwd: tempDirectory,
+            shell: true,
+          }
+        );
+      }
     );
 
     await action(
       `Importing ${dependenciesWithoutReact.length} dependencies from your packages.json to the sample app`,
-      new Promise((resolve, reject) =>
-        prependFile(
+      () => {
+        return prependFile(
           `${tempDirectory}/index.js`,
           `${dependenciesWithoutReact.map(
             ([packageName], index) =>
               `import * as OriginalPackage${index} from '${packageName}';`
           ).join(`
 `)}
-`,
-          (err) => {
-            if (err) {
-              reject(err);
-            }
-
-            resolve();
-          }
-        )
-      )
+`
+        );
+      }
     );
   }
 
-  await action(
-    'Bundling sample app',
-    execa(
+  await action('Bundling sample app', () => {
+    return execa(
       'npx',
       [
         'react-native',
@@ -162,46 +160,34 @@ if (packagesToAdd && packagesToAdd.length === 0) {
         'original.map',
       ],
       { cwd: tempDirectory }
-    )
-  );
+    );
+  });
 
-  await action(
-    `Adding ${packagesToAdd.join(' ')}`,
-    execa(`yarn add ${packagesToAdd.join(' ')}`, {
+  await action(`Adding ${packagesToAdd.join(' ')}`, () => {
+    return execa(`yarn add ${packagesToAdd.join(' ')}`, {
       cwd: tempDirectory,
       shell: true,
-    })
-  );
+    });
+  });
 
-  await action(
-    `Importing ${packagesToAdd.join(' ')}`,
-    new Promise((resolve, reject) =>
-      prependFile(
-        `${tempDirectory}/index.js`,
-        `${packagesToAdd
-          .filter(
-            (packageName) => !existingDependenciesNames.includes(packageName)
-          )
-          .map(
-            (packageName, index) =>
-              `import * as Package${index} from '${packageName}';`
-          ).join(`
-`)}
-`,
-        (err) => {
-          if (err) {
-            reject(err);
-          }
+  await action(`Importing ${packagesToAdd.join(' ')}`, () => {
+    return prependFile(
+      `${tempDirectory}/index.js`,
+      `${packagesToAdd
+        .filter(
+          (packageName) => !existingDependenciesNames.includes(packageName)
+        )
+        .map(
+          (packageName, index) =>
+            `import * as Package${index} from '${packageName}';`
+        ).join(`
+    `)}
+    `
+    );
+  });
 
-          resolve();
-        }
-      )
-    )
-  );
-
-  await action(
-    'Bundling sample app again',
-    execa(
+  await action('Bundling sample app again', () => {
+    return execa(
       'npx',
       [
         'react-native',
@@ -218,85 +204,50 @@ if (packagesToAdd && packagesToAdd.length === 0) {
         'withPackages.map',
       ],
       { cwd: tempDirectory }
-    )
-  );
+    );
+  });
 
-  await action(
-    'Comparing size of bundles',
-    new Promise((resolve, reject) => {
-      Promise.all([
-        new Promise((statsResolve) =>
-          fs.stat(`${tempDirectory}/original.jsbundle`, [], (err, stats) => {
-            if (err) {
-              reject(err);
-            }
+  await action('Comparing size of bundles', async () => {
+    const [{ size: originalSize }, { size: polyfillSize }] = await Promise.all([
+      fs.stat(`${tempDirectory}/original.jsbundle`),
+      fs.stat(`${tempDirectory}/withPackages.jsbundle`),
+    ]);
 
-            statsResolve(stats.size);
-          })
-        ),
-        new Promise((statsResolve) =>
-          fs.stat(
-            `${tempDirectory}/withPackages.jsbundle`,
-            [],
-            (err, stats) => {
-              if (err) {
-                reject(err);
-              }
-
-              statsResolve(stats.size);
-            }
-          )
-        ),
-      ]).then(([originalSize, polyfillSize]) => {
-        resolve(
-          () => `
+    return chalk.white(`
 📦 The original bundle is: ${chalk.bold(filesize(originalSize))}
 📦 The bundle with ${packagesToAdd.join(' ')} is: ${chalk.bold(
-            filesize(polyfillSize)
-          )}
+      filesize(polyfillSize)
+    )}
 ⚖️  Therefore, ${packagesToAdd.join(' ')} adds ${chalk.bold.red(
-            filesize(polyfillSize - originalSize)
-          )} to the JavaScript bundle`
-        );
-      });
-    })
-  );
+      `${filesize(polyfillSize - originalSize)} (+${Math.round(
+        (polyfillSize * 100) / originalSize - 100
+      )}%)`
+    )} to the JavaScript bundle`);
+  });
 
-  await action(
-    'Generating sources map explorer',
-    new Promise((resolve) => {
-      const { name: sourceMapOutputDirectory } = tmp.dirSync();
+  await action('Generating sources map explorer', async () => {
+    const { name: sourceMapOutputDirectory } = tmp.dirSync();
 
-      Promise.all([
-        generateSourceMapExplorer(
-          'original',
-          tempDirectory,
-          sourceMapOutputDirectory
-        ),
-        generateSourceMapExplorer(
-          'withPackages',
-          tempDirectory,
-          sourceMapOutputDirectory
-        ),
-      ]).then(([originalOutput, withPackagesOutput]) => {
-        resolve();
+    const [originalOutput, withPackagesOutput] = await Promise.all([
+      generateSourceMapExplorer(
+        'original',
+        tempDirectory,
+        sourceMapOutputDirectory
+      ),
+      generateSourceMapExplorer(
+        'withPackages',
+        tempDirectory,
+        sourceMapOutputDirectory
+      ),
+    ]);
 
-        setTimeout(() => {
-          console.log(
-            'Original source map explorer:',
-            chalk.underline(originalOutput)
-          );
+    return chalk.white(`
+Original source map explorer: ${chalk.underline(originalOutput)}
+With ${packagesToAdd.join(' ')}: ${chalk.underline(withPackagesOutput)} 
+`);
+  });
 
-          console.log(
-            `With ${packagesToAdd.join(' ')}:`,
-            chalk.underline(withPackagesOutput)
-          );
-        });
-      });
-    })
-  );
-
-  if (!program.debug) {
+  if (!options.debug) {
     clearTempDirectory();
   }
 })();

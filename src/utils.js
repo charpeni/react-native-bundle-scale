@@ -15,11 +15,11 @@ function computeSucceedResult(result, text) {
   return undefined;
 }
 
-async function action(text, promise) {
+async function action(text, asyncFunction) {
   const spinner = ora(text).start();
 
   try {
-    const result = await promise;
+    const result = await asyncFunction();
 
     spinner.succeed(computeSucceedResult(result, text));
   } catch (error) {
