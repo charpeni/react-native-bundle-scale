@@ -4,7 +4,7 @@ executors:
   default:
     docker:
       - image: cimg/node:18.16
-    working_directory: ~/react-native-bundle-size
+    working_directory: ~/react-native-bundle-scale
 
 commands:
   save-cache-yarn:
@@ -22,7 +22,7 @@ commands:
   attach-workspace:
     steps:
       - attach_workspace:
-          at: ~/react-native-bundle-size
+          at: ~/react-native-bundle-scale
 
 jobs:
   checkout:

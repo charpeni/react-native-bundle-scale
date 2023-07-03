@@ -1,15 +1,15 @@
 {
-  "name": "react-native-bundle-size",
+  "name": "react-native-bundle-scale",
   "version": "1.0.0",
-  "description": "",
+  "description": "A command-line interface to see how adding packages affects your React Native JavaScript bundle.",
   "bugs": {
-    "url": "https://github.com/charpeni/react-native-bundle-size/issues"
+    "url": "https://github.com/charpeni/react-native-bundle-scale/issues"
   },
-  "homepage": "https://github.com/charpeni/react-native-bundle-size",
-  "readme": "https://github.com/charpeni/react-native-bundle-size#readme",
+  "homepage": "https://github.com/charpeni/react-native-bundle-scale",
+  "readme": "https://github.com/charpeni/react-native-bundle-scale#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/charpeni/react-native-bundle-size.git"
+    "url": "https://github.com/charpeni/react-native-bundle-scale.git"
   },
   "main": "src/index.js",
   "bin": "src/index.js",
