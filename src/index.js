@@ -29,6 +29,7 @@ program
   )
   .version(version, '-v, --version', 'Show version number')
   .option('-d, --debug')
+  .option('-rnv, --react-native-version [version]', 'React Native version')
   .option(
     '-p, --package-json [package.json]',
     'Use the package.json from the current working directory (or provided path) as default dependencies for the sample app',
@@ -51,7 +52,7 @@ if (packagesToAdd && packagesToAdd.length === 0) {
 }
 
 (async () => {
-  let reactNativeVersion = 'latest';
+  let reactNativeVersion = options.reactNativeVersion || 'latest';
   /** @type {Array<[string, string]>} */
   let dependenciesWithoutReact = [];
   /** @type {Array<string>} */
