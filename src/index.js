@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const chalk = require('chalk');
 const execa = require('execa');
 const { filesize } = require('filesize');
