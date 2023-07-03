@@ -56,6 +56,13 @@ jobs:
       - run:
           name: Type Check
           command: yarn type-check
+  run:
+    executor: default
+    steps:
+      - attach-workspace
+      - run:
+          name: Run
+          command: npx react-native-bundle-scale react-native-url-polyfill
 
 workflows:
   tests:
@@ -65,5 +72,8 @@ workflows:
           requires:
             - checkout
       - type-check:
+          requires:
+            - checkout
+      - run:
           requires:
             - checkout
