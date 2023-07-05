@@ -30,6 +30,13 @@
 
 <hr />
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/charpeni/react-native-bundle-scale/assets/7189823/ce7ca8ea-8088-4b54-8de9-1e0298106872">
+    <img width="800" alt="Library's example" src="https://github.com/charpeni/react-native-bundle-scale/assets/7189823/a155f9a4-bb22-4e67-957d-a75f38a8edc9">
+  </picture>
+</p>
+
 ## Usage
 
 You can use this CLI to either get the cost of adding packages to a freshly initialized React Native project or based on a `package.json`:
