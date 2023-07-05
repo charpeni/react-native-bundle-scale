@@ -10,7 +10,7 @@ const tmp = require('tmp');
 
 const { action, generateSourceMapExplorer, notNull } = require('./utils');
 
-const { version } = require('../package.json');
+const { version: RNBSVersion } = require('../package.json');
 
 tmp.setGracefulCleanup();
 
@@ -18,8 +18,8 @@ const PROJECT_NAME = 'BundleSize';
 const ORIGINAL_BUNDLE_NAME = 'original';
 const WITH_PACKAGES_BUNDLE_NAME = 'withPackages';
 
-/** @type {Array<string>} */
-let packagesToAdd = [];
+/** @type {Record<string, string>} */
+let packagesToAdd = {};
 /** @type {Record<string, string>} */
 let dependencies = {};
 
@@ -27,7 +27,7 @@ program
   .description(
     'A command-line interface to see how adding packages affects your React Native JavaScript bundle.'
   )
-  .version(version, '-v, --version', 'Show version number')
+  .version(RNBSVersion, '-v, --version', 'Show version number')
   .option('-d, --debug')
   .option('-rnv, --react-native-version [version]', 'React Native version')
   .option(
@@ -35,10 +35,21 @@ program
     'Use the package.json from the current working directory (or provided path) as default dependencies for the sample app',
     false
   )
+  .option('-pj, --packages-as-json', 'Parse packages as JSON')
   .arguments('[packages...]')
   .action((/** @type {Array<string>} */ packages) => {
-    if (packages) {
-      packagesToAdd = packages;
+    const { packagesAsJson } = program.opts();
+
+    if (packages && packages.length > 0 && packagesAsJson) {
+      packagesToAdd = JSON.parse(packages[0]);
+    } else if (packages) {
+      packagesToAdd = packages.reduce(
+        (acc, packageName) => ({
+          ...acc,
+          [packageName]: 'latest',
+        }),
+        {}
+      );
     }
   });
 
@@ -46,7 +57,7 @@ program.parse(process.argv);
 
 const options = program.opts();
 
-if (packagesToAdd && packagesToAdd.length === 0) {
+if (Object.keys(packagesToAdd).length === 0) {
   console.error('You must provide at least one package to add.');
   process.exit(1);
 }
@@ -177,26 +188,31 @@ if (packagesToAdd && packagesToAdd.length === 0) {
     );
   });
 
-  await action(`Adding ${packagesToAdd.join(' ')}`, () => {
-    return execa(`yarn add ${packagesToAdd.join(' ')}`, {
-      cwd: tempDirectory,
-      shell: true,
-    });
+  await action(`Adding ${Object.keys(packagesToAdd).join(' ')}`, () => {
+    return execa(
+      `yarn add ${Object.entries(packagesToAdd).map(
+        ([name, version]) => `${name}@${version}`
+      )}`,
+      {
+        cwd: tempDirectory,
+        shell: true,
+      }
+    );
   });
 
-  await action(`Importing ${packagesToAdd.join(' ')}`, () => {
+  await action(`Importing ${Object.keys(packagesToAdd).join(' ')}`, () => {
     return prependFile(
       `${tempDirectory}/index.js`,
-      `${packagesToAdd
+      `${Object.entries(packagesToAdd)
         .filter(
-          (packageName) => !existingDependenciesNames.includes(packageName)
+          ([packageName]) => !existingDependenciesNames.includes(packageName)
         )
         .map(
-          (packageName, index) =>
+          ([packageName], index) =>
             `import * as Package${index} from '${packageName}';`
         ).join(`
-    `)}
-    `
+      `)}
+      `
     );
   });
 
@@ -229,10 +245,10 @@ if (packagesToAdd && packagesToAdd.length === 0) {
 
     return chalk.white(`
 📦 The original bundle is: ${chalk.bold(filesize(originalSize))}
-📦 The bundle with ${packagesToAdd.join(' ')} is: ${chalk.bold(
+📦 The bundle with ${Object.keys(packagesToAdd).join(' ')} is: ${chalk.bold(
       filesize(polyfillSize)
     )}
-⚖️  Therefore, ${packagesToAdd.join(' ')} adds ${chalk.bold.red(
+⚖️  Therefore, ${Object.keys(packagesToAdd).join(' ')} adds ${chalk.bold.red(
       `${filesize(polyfillSize - originalSize)} (+${Math.round(
         (polyfillSize * 100) / originalSize - 100
       )}%)`
@@ -257,7 +273,9 @@ if (packagesToAdd && packagesToAdd.length === 0) {
 
     return chalk.white(`
 Original source map explorer: ${chalk.underline(originalOutput)}
-With ${packagesToAdd.join(' ')}: ${chalk.underline(withPackagesOutput)} 
+With ${Object.keys(packagesToAdd).join(' ')}: ${chalk.underline(
+      withPackagesOutput
+    )} 
 `);
   });
 })();
