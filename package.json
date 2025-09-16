@@ -26,26 +26,26 @@
   "license": "MIT",
   "dependencies": {
     "chalk": "^4.1.0",
-    "commander": "^11.0.0",
-    "execa": "^5.1.0",
-    "filesize": "^10.0.7",
+    "commander": "^14.0.1",
+    "execa": "^5.1.1",
+    "filesize": "^11.0.2",
     "ora": "^5.4.0",
     "prepend-file": "^2.0.1",
     "source-map-explorer": "^2.5.3",
-    "tmp": "^0.2.1"
+    "tmp": "^0.2.5"
   },
   "devDependencies": {
-    "@types/node": "^20.3.3",
-    "@types/tmp": "^0.2.3",
-    "eslint": "^8.43.0",
+    "@types/node": "^22.0.0",
+    "@types/tmp": "^0.2.6",
+    "eslint": "^8.57.0",
     "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-config-prettier": "^8.8.0",
-    "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-prettier": "^5.5.4",
     "husky": ">=8.0.3",
     "lint-staged": ">=13.2.3",
-    "prettier": "2.8.8",
-    "typescript": "^5.1.6"
+    "prettier": "3.6.2",
+    "typescript": "^5.9.2"
   },
   "husky": {
     "hooks": {
