@@ -123,7 +123,7 @@ if (Object.keys(packagesToAdd).length === 0) {
     `Creating a sample app with react-native@${reactNativeVersion}`,
     () => {
       return execa(
-        `npx --yes react-native@${reactNativeVersion} init ${PROJECT_NAME} --directory ${tempDirectory} ${
+        `npx --yes @react-native-community/cli@${reactNativeVersion} init ${PROJECT_NAME} --directory ${tempDirectory} --install-pods false ${
           reactNativeVersion !== 'latest'
             ? `--version ${reactNativeVersion}`
             : ''
