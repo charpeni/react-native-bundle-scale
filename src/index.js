@@ -29,13 +29,13 @@ program
   )
   .version(RNBSVersion, '-v, --version', 'Show version number')
   .option('-d, --debug')
-  .option('-rnv, --react-native-version [version]', 'React Native version')
+  .option('--rnv, --react-native-version [version]', 'React Native version')
   .option(
     '-p, --package-json [package.json]',
     'Use the package.json from the current working directory (or provided path) as default dependencies for the sample app',
     false
   )
-  .option('-pj, --packages-as-json', 'Parse packages as JSON')
+  .option('--pj, --packages-as-json', 'Parse packages as JSON')
   .arguments('[packages...]')
   .action((/** @type {Array<string>} */ packages) => {
     const { packagesAsJson } = program.opts();
