@@ -1,5 +1,5 @@
 <p align="center">
-  <img height="160" src="./logo.png" alt="Library's logo">
+  <img height="160" src="https://github.com/user-attachments/assets/8fe0ea16-8c1f-482c-bfbe-4424e68953f0" alt="Library's logo">
 </p>
 
 <h3 align="center">
@@ -16,9 +16,6 @@
   </a>
   <a href="https://www.npmjs.org/package/react-native-bundle-scale">
     <img src="https://img.shields.io/npm/dm/react-native-bundle-scale" alt="Monthly downloads" />
-  </a>
-  <a href="https://circleci.com/gh/charpeni/react-native-bundle-scale">
-    <img src="https://circleci.com/gh/charpeni/react-native-bundle-scale.svg?style=shield" alt="Current CircleCI build status." />
   </a>
   <a href="https://circleci.com/gh/charpeni/react-native-bundle-scale">
     <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome!" />
